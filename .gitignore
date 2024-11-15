@@ -1,0 +1,12 @@
+# # ignore everything in sub dir
+# */*
+# # but those files
+# !*/README.md
+# !*/HELP.md
+# !*/HINTS.md
+# !*/.exercism
+
+# or we can just ignore .dart_tool/ and build/ and .packages/
+*/.dart_tool/
+*/.packages
+*/build/
