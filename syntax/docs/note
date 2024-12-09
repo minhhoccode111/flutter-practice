@@ -1,0 +1,3 @@
+# Notes
+
+1. Production code ignores the `assert()` call. During development, `assert(condition)` throws an exception if condition is false.
