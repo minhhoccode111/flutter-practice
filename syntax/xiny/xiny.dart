@@ -199,7 +199,7 @@ example8() {
 /// Instead of List, it becomes an Iterable
 var iterableExplicitList = explicitList;
 print(iterableExplicitList) // ("SomeArray"); "[]" becomes "()"
-var newExplicitLists = explicitList.toList() // Converts Iterable<E> to List<E>
+var newExplicitLists = explicitList.toList(); // Converts Iterable<E> to List<E>
 
 /// Loops in Dart take the form of standard for () {} or while () {} loops,
 /// slightly more modern for (.. in ..) {}, or functional callbacks with many
@@ -244,7 +244,7 @@ example11() {
   final double myFinalDouble = 0.1;
   num myNumDouble = 2.2;
   num myNumInt = 2;
-  int myInt = 1;
+  int? myInt = 1;
   double myDouble = 0; // Dart will add decimal prefix, becomes 0.0;
   myNumDouble = myFinalInt; // valid
   myNumDouble = myFinalDouble; // valid
@@ -254,13 +254,13 @@ example11() {
   myNumInt = myFinalDouble; // valid
   myNumInt = myFinalNumDouble; // valid
 
-  myInt = myNumDouble; // error
-  myInt = myFinalDouble; // error
-  myInt = myFinalNumInt; // valid
+  myInt = myNumDouble as int?; // error
+  myInt = myFinalDouble as int; // error
+  myInt = myFinalNumInt as int?; // valid
 
-  myDouble = myFinalInt; // error
-  myDouble = myFinalNumInt; // error
-  myDouble = myFinalNumDouble; // valid
+  myDouble = myFinalInt as double; // error
+  myDouble = myFinalNumInt as double; // error
+  myDouble = myFinalNumDouble as double; // valid
 
   print("Example11 int ${i}");
   print("Example11 double ${d}");
