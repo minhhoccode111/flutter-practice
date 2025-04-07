@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'models/todo.dart';
+import 'constants/app_constants.dart';
+import 'widgets/small_button.dart';
 
 /*
 
@@ -17,28 +20,9 @@ sub-problems:
 - [x] make the ui look okay
 - [x] fix overflow screen bug with SingleChildScrollView(
 - [x] reusability with smallButton Widget
+- [x] refactor
 
 */
-
-class Todo {
-  // set "final" so that immutable, when we need to update an object, we just
-  // remove it and create a new one, we do this to make flutter aware of the
-  // state change
-  final String title;
-  final bool isDone;
-  Todo(this.title, {this.isDone = false});
-  Widget buildTodo(BuildContext context) {
-    return isDone
-        ? Text(
-          title,
-          style: TextStyle(
-            decoration: TextDecoration.lineThrough,
-            decorationThickness: 2,
-          ),
-        )
-        : Text(title);
-  }
-}
 
 void main() {
   runApp(const MyApp());
@@ -49,11 +33,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Todolist',
+      title: AppConstants.appTitle,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Todolist'),
+      home: const MyHomePage(title: AppConstants.appTitle),
     );
   }
 }
@@ -68,32 +52,27 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final controllerAdd = TextEditingController();
   final controllerEdit = TextEditingController();
-
-  var _todos = [
-    Todo("Setup Development Environment", isDone: true),
-    Todo("Read the docs"),
-    Todo("Watch tutorials"),
-    Todo("Create todolist app", isDone: true),
-  ];
-
   var editIndex = -1;
+
+  final List<Todo> _todos = [
+    Todo(title: "Setup Development Environment", isDone: true),
+    Todo(title: "Read the docs"),
+    Todo(title: "Watch tutorials"),
+    Todo(title: "Create todolist app", isDone: true),
+  ];
 
   void _newTodo() {
     final text = controllerAdd.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _todos = [Todo(text), ..._todos];
+      _todos.insert(0, Todo(title: text));
     });
     controllerAdd.clear();
   }
 
   void _toggleDoneTodo(int index) {
     setState(() {
-      _todos = [
-        ..._todos.sublist(0, index),
-        Todo(_todos[index].title, isDone: !_todos[index].isDone),
-        ..._todos.sublist(index + 1),
-      ];
+      _todos[index] = _todos[index].copyWith(isDone: !_todos[index].isDone);
     });
   }
 
@@ -108,22 +87,17 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       editIndex = -1;
     });
-    controllerEdit.text = "";
+    controllerEdit.clear();
   }
 
   void _saveEdit() {
-    final currentIsDone = _todos[editIndex].isDone;
     final text = controllerEdit.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _todos = [
-        ..._todos.sublist(0, editIndex),
-        Todo(text, isDone: currentIsDone),
-        ..._todos.sublist(editIndex + 1),
-      ];
+      _todos[editIndex] = _todos[editIndex].copyWith(title: text);
       editIndex = -1;
     });
-    controllerEdit.text = "";
+    controllerEdit.clear();
   }
 
   void _deleteTodo(int index) {
@@ -132,17 +106,77 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Widget smallButton(VoidCallback onPressed, IconData icon) {
-    return SizedBox(
-      width: 28,
-      height: 28,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        ),
-        child: Icon(icon, size: 16),
+  Widget _buildTodoItem(Todo item, int index) {
+    if (index == editIndex) {
+      return _buildEditField();
+    }
+
+    return Padding(
+      padding: AppConstants.defaultPadding,
+      child: Row(
+        children: [
+          Expanded(child: item.buildTodo(context)),
+          SmallButton(
+            onPressed: () => _toggleDoneTodo(index),
+            icon: Icons.check,
+          ),
+          SmallButton(onPressed: () => _startEdit(index), icon: Icons.edit),
+          SmallButton(onPressed: () => _deleteTodo(index), icon: Icons.delete),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditField() {
+    return Padding(
+      padding: AppConstants.defaultPadding,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controllerEdit,
+              decoration: InputDecoration(
+                hintText: AppConstants.editTodoHint,
+                isDense: true,
+                contentPadding: AppConstants.textFieldPadding,
+                suffixIcon: IconButton(
+                  onPressed: () => controllerEdit.clear(),
+                  icon: const Icon(Icons.clear, size: AppConstants.iconSize),
+                ),
+              ),
+              onSubmitted: (_) => _saveEdit(),
+            ),
+          ),
+          SmallButton(onPressed: _saveEdit, icon: Icons.save),
+          SmallButton(onPressed: _cancelEdit, icon: Icons.cancel),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddTodoField() {
+    return Padding(
+      padding: AppConstants.defaultPadding,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controllerAdd,
+              decoration: InputDecoration(
+                hintText: AppConstants.addTodoHint,
+                isDense: true,
+                contentPadding: AppConstants.textFieldPadding,
+                suffixIcon: IconButton(
+                  onPressed: () => controllerAdd.clear(),
+                  icon: const Icon(Icons.clear, size: AppConstants.iconSize),
+                ),
+              ),
+              onSubmitted: (_) => _newTodo(),
+            ),
+          ),
+          const SizedBox(width: AppConstants.padding),
+          SmallButton(onPressed: _newTodo, icon: Icons.add),
+        ],
       ),
     );
   }
@@ -159,83 +193,23 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             ListView.builder(
               shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: _todos.length,
-              itemBuilder: (context, index) {
-                final item = _todos[index];
-                if (index == editIndex) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: controllerEdit,
-                            decoration: InputDecoration(
-                              hintText: "edit todo",
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 8,
-                                horizontal: 8,
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: () => controllerEdit.clear(),
-                                icon: const Icon(Icons.clear, size: 16),
-                              ),
-                            ),
-                            onSubmitted: (_) => _saveEdit(),
-                          ),
-                        ),
-                        smallButton(() => _saveEdit(), Icons.save),
-                        smallButton(() => _cancelEdit(), Icons.cancel),
-                      ],
-                    ),
-                  );
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: [
-                      Expanded(child: item.buildTodo(context)),
-                      smallButton(() => _toggleDoneTodo(index), Icons.check),
-                      smallButton(() => _startEdit(index), Icons.edit),
-                      smallButton(() => _deleteTodo(index), Icons.delete),
-                    ],
-                  ),
-                );
-              },
+              itemBuilder:
+                  (context, index) => _buildTodoItem(_todos[index], index),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controllerAdd,
-                decoration: InputDecoration(
-                  hintText: "enter todo",
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 8,
-                  ),
-                  suffixIcon: IconButton(
-                    onPressed: () => controllerAdd.clear(),
-                    icon: const Icon(Icons.clear, size: 16),
-                  ),
-                ),
-                onSubmitted: (_) => _newTodo(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            smallButton(() => _newTodo(), Icons.add),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildAddTodoField(),
     );
+  }
+
+  // clean up
+  @override
+  void dispose() {
+    controllerAdd.dispose();
+    controllerEdit.dispose();
+    super.dispose();
   }
 }
