@@ -9,10 +9,12 @@ what's next:
 - [x] add new todo when submit form
 - [x] ui button toggle done todo
 - [x] toggle done todo functionality
-- [ ] ui button delete todo
-- [ ] delete todo functionality
-- [ ] ui button edit todo title
-- [ ] edit todo title functionality
+- [x] ui button delete todo
+- [x] delete todo functionality
+- [x] ui button edit todo title
+- [x] edit todo title functionality
+- [x] add input fields validation
+- [ ] make the ui look okay
 
 */
 
@@ -62,20 +64,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Todo> _todos = [
+  final controllerAdd = TextEditingController();
+  final controllerEdit = TextEditingController();
+
+  var _todos = [
     Todo("Setup Development Environment", isDone: true),
     Todo("Read the docs"),
     Todo("Watch tutorials"),
     Todo("Do projects"),
   ];
 
-  final TextEditingController controller = TextEditingController();
+  var editIndex = -1;
 
-  void _newTodo(String todo) {
+  void _newTodo() {
+    final text = controllerAdd.text.trim();
+    if (text.isEmpty) return;
     setState(() {
-      _todos = [..._todos, Todo(todo)];
+      _todos = [..._todos, Todo(text)];
     });
-    controller.clear();
+    controllerAdd.clear();
   }
 
   void _toggleDoneTodo(int index) {
@@ -85,6 +92,41 @@ class _MyHomePageState extends State<MyHomePage> {
         Todo(_todos[index].title, isDone: !_todos[index].isDone),
         ..._todos.sublist(index + 1),
       ];
+    });
+  }
+
+  void _startEdit(int index) {
+    setState(() {
+      editIndex = index;
+    });
+    controllerEdit.text = _todos[index].title;
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      editIndex = -1;
+    });
+    controllerEdit.text = "";
+  }
+
+  void _saveEdit() {
+    final currentIsDone = _todos[editIndex].isDone;
+    final text = controllerEdit.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _todos = [
+        ..._todos.sublist(0, editIndex),
+        Todo(text, isDone: currentIsDone),
+        ..._todos.sublist(editIndex + 1),
+      ];
+      editIndex = -1;
+    });
+    controllerEdit.text = "";
+  }
+
+  void _deleteTodo(int index) {
+    setState(() {
+      _todos.removeAt(index);
     });
   }
 
@@ -104,6 +146,38 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: _todos.length,
               itemBuilder: (context, index) {
                 final item = _todos[index];
+                if (index == editIndex) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllerEdit,
+                          decoration: InputDecoration(
+                            hintText: "edit todo",
+                            suffixIcon: IconButton(
+                              onPressed: () => controllerAdd.clear(),
+                              icon: const Icon(Icons.clear),
+                            ),
+                          ),
+                          onSubmitted: (_) => _saveEdit(),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          _saveEdit();
+                        },
+                        child: Icon(Icons.save),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          _cancelEdit();
+                        },
+                        child: Icon(Icons.cancel),
+                      ),
+                    ],
+                  );
+                }
+
                 return Row(
                   children: [
                     Expanded(child: item.buildTodo(context)),
@@ -113,9 +187,20 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                       child: Icon(Icons.check),
                     ),
+                    ElevatedButton(
+                      onPressed: () {
+                        _startEdit(index);
+                      },
+                      child: Icon(Icons.edit),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        _deleteTodo(index);
+                      },
+                      child: Icon(Icons.delete),
+                    ),
                   ],
                 );
-                // return item.buildTodo(context);
               },
             ),
           ],
@@ -125,20 +210,20 @@ class _MyHomePageState extends State<MyHomePage> {
         children: [
           Expanded(
             child: TextField(
-              controller: controller,
+              controller: controllerAdd,
               decoration: InputDecoration(
                 hintText: "enter todo",
                 suffixIcon: IconButton(
-                  onPressed: () => controller.clear(),
+                  onPressed: () => controllerAdd.clear(),
                   icon: const Icon(Icons.clear),
                 ),
               ),
-              onSubmitted: (_) => _newTodo(controller.text),
+              onSubmitted: (_) => _newTodo(),
             ),
           ),
           const SizedBox(width: 8),
           FilledButton.tonal(
-            onPressed: () => _newTodo(controller.text),
+            onPressed: () => _newTodo(),
             child: const Text("add"),
           ),
         ],
