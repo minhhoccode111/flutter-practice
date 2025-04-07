@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 
 class Todo {
@@ -32,10 +34,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Todo> _todos = [];
+  List<Todo> _todos = [
+    Todo("Setup Development Environment", isDone: true),
+    Todo("Read the docs"),
+    Todo("Watch tutorials"),
+    Todo("Do projects"),
+  ];
+
+  final TextEditingController controller = TextEditingController();
 
   void _newTodo() {
     print("new todo button clicked");
+    print(_todos);
   }
 
   @override
@@ -50,37 +60,37 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           spacing: 4,
           children: [
-            Row(
-              spacing: 4,
-              children: [
-                Expanded(child: Text("Read the docs")),
-                Icon(Icons.check),
-                Icon(Icons.delete),
-              ],
-            ),
-            Row(
-              spacing: 4,
-              children: [
-                Expanded(child: Text("Watch tutorials")),
-                Icon(Icons.check),
-                Icon(Icons.delete),
-              ],
-            ),
-            Row(
-              spacing: 4,
-              children: [
-                Expanded(child: Text("Do projects")),
-                Icon(Icons.check),
-                Icon(Icons.delete),
-              ],
-            ),
+            //
           ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(8),
         child: Row(
           children: [
-            ElevatedButton(onPressed: _newTodo, child: Icon(Icons.add)),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  hintText: "enter todo",
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  suffixIcon: IconButton(
+                    onPressed: () => controller.clear(),
+                    icon: const Icon(Icons.clear),
+                  ),
+                ),
+                onSubmitted: (_) => _newTodo(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.tonal(
+              onPressed: _newTodo,
+              child: const Text(
+                "add",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
       ),
