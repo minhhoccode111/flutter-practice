@@ -1,11 +1,34 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 
+/*
+
+what's next:
+- [x] init project with Todo shape
+- [x] render the todos list, differentiate between done and not done
+- [x] ui bottom input and submit button
+- [x] add new todo when submit form
+- [ ] ui button delete todo
+- [ ] delete todo functionality
+- [ ] ui button edit todo
+- [ ] edit todo functionality
+
+*/
+
 class Todo {
-  final String title;
-  final bool isDone;
+  String title;
+  bool isDone;
   Todo(this.title, {this.isDone = false});
+  Widget buildTodo(BuildContext context) {
+    return isDone
+        ? Text(
+          title,
+          style: TextStyle(
+            decoration: TextDecoration.lineThrough,
+            decorationThickness: 2,
+          ),
+        )
+        : Text(title);
+  }
 }
 
 void main() {
@@ -43,9 +66,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final TextEditingController controller = TextEditingController();
 
-  void _newTodo() {
-    print("new todo button clicked");
-    print(_todos);
+  void _newTodo(String todo) {
+    setState(() {
+      _todos = [..._todos, Todo(todo)];
+    });
+    controller.clear();
   }
 
   @override
@@ -58,41 +83,39 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Container(
         padding: EdgeInsets.all(16),
         child: Column(
-          spacing: 4,
           children: [
-            //
+            ListView.builder(
+              shrinkWrap: true,
+              itemCount: _todos.length,
+              itemBuilder: (context, index) {
+                final item = _todos[index];
+                return item.buildTodo(context);
+              },
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: "enter todo",
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  suffixIcon: IconButton(
-                    onPressed: () => controller.clear(),
-                    icon: const Icon(Icons.clear),
-                  ),
+      bottomNavigationBar: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: "enter todo",
+                suffixIcon: IconButton(
+                  onPressed: () => controller.clear(),
+                  icon: const Icon(Icons.clear),
                 ),
-                onSubmitted: (_) => _newTodo(),
               ),
+              onSubmitted: (_) => _newTodo(controller.text),
             ),
-            const SizedBox(width: 8),
-            FilledButton.tonal(
-              onPressed: _newTodo,
-              child: const Text(
-                "add",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.tonal(
+            onPressed: () => _newTodo(controller.text),
+            child: const Text("add"),
+          ),
+        ],
       ),
     );
   }
