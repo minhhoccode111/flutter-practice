@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /*
 
-what's next:
+sub-problems:
 - [x] init project with Todo shape
 - [x] render the todos list, differentiate between done and not done
 - [x] ui bottom input and submit button
@@ -14,7 +14,9 @@ what's next:
 - [x] ui button edit todo title
 - [x] edit todo title functionality
 - [x] add input fields validation
-- [ ] make the ui look okay
+- [x] make the ui look okay
+- [x] fix overflow screen bug with SingleChildScrollView(
+- [x] reusability with smallButton Widget
 
 */
 
@@ -71,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Todo("Setup Development Environment", isDone: true),
     Todo("Read the docs"),
     Todo("Watch tutorials"),
-    Todo("Do projects"),
+    Todo("Create todolist app", isDone: true),
   ];
 
   var editIndex = -1;
@@ -80,7 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final text = controllerAdd.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _todos = [..._todos, Todo(text)];
+      _todos = [Todo(text), ..._todos];
     });
     controllerAdd.clear();
   }
@@ -130,6 +132,21 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Widget smallButton(VoidCallback onPressed, IconData icon) {
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        ),
+        child: Icon(icon, size: 16),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,96 +154,87 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Container(
-        padding: EdgeInsets.all(16),
+      body: SingleChildScrollView(
         child: Column(
           children: [
             ListView.builder(
               shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
               itemCount: _todos.length,
               itemBuilder: (context, index) {
                 final item = _todos[index];
                 if (index == editIndex) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controllerEdit,
-                          decoration: InputDecoration(
-                            hintText: "edit todo",
-                            suffixIcon: IconButton(
-                              onPressed: () => controllerAdd.clear(),
-                              icon: const Icon(Icons.clear),
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controllerEdit,
+                            decoration: InputDecoration(
+                              hintText: "edit todo",
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 8,
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () => controllerEdit.clear(),
+                                icon: const Icon(Icons.clear, size: 16),
+                              ),
                             ),
+                            onSubmitted: (_) => _saveEdit(),
                           ),
-                          onSubmitted: (_) => _saveEdit(),
                         ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          _saveEdit();
-                        },
-                        child: Icon(Icons.save),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          _cancelEdit();
-                        },
-                        child: Icon(Icons.cancel),
-                      ),
-                    ],
+                        smallButton(() => _saveEdit(), Icons.save),
+                        smallButton(() => _cancelEdit(), Icons.cancel),
+                      ],
+                    ),
                   );
                 }
 
-                return Row(
-                  children: [
-                    Expanded(child: item.buildTodo(context)),
-                    ElevatedButton(
-                      onPressed: () {
-                        _toggleDoneTodo(index);
-                      },
-                      child: Icon(Icons.check),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        _startEdit(index);
-                      },
-                      child: Icon(Icons.edit),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        _deleteTodo(index);
-                      },
-                      child: Icon(Icons.delete),
-                    ),
-                  ],
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      Expanded(child: item.buildTodo(context)),
+                      smallButton(() => _toggleDoneTodo(index), Icons.check),
+                      smallButton(() => _startEdit(index), Icons.edit),
+                      smallButton(() => _deleteTodo(index), Icons.delete),
+                    ],
+                  ),
                 );
               },
             ),
           ],
         ),
       ),
-      bottomNavigationBar: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controllerAdd,
-              decoration: InputDecoration(
-                hintText: "enter todo",
-                suffixIcon: IconButton(
-                  onPressed: () => controllerAdd.clear(),
-                  icon: const Icon(Icons.clear),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controllerAdd,
+                decoration: InputDecoration(
+                  hintText: "enter todo",
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 8,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () => controllerAdd.clear(),
+                    icon: const Icon(Icons.clear, size: 16),
+                  ),
                 ),
+                onSubmitted: (_) => _newTodo(),
               ),
-              onSubmitted: (_) => _newTodo(),
             ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.tonal(
-            onPressed: () => _newTodo(),
-            child: const Text("add"),
-          ),
-        ],
+            const SizedBox(width: 8),
+            smallButton(() => _newTodo(), Icons.add),
+          ],
+        ),
       ),
     );
   }
