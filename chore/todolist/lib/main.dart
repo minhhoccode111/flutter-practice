@@ -7,16 +7,21 @@ what's next:
 - [x] render the todos list, differentiate between done and not done
 - [x] ui bottom input and submit button
 - [x] add new todo when submit form
+- [x] ui button toggle done todo
+- [x] toggle done todo functionality
 - [ ] ui button delete todo
 - [ ] delete todo functionality
-- [ ] ui button edit todo
-- [ ] edit todo functionality
+- [ ] ui button edit todo title
+- [ ] edit todo title functionality
 
 */
 
 class Todo {
-  String title;
-  bool isDone;
+  // set "final" so that immutable, when we need to update an object, we just
+  // remove it and create a new one, we do this to make flutter aware of the
+  // state change
+  final String title;
+  final bool isDone;
   Todo(this.title, {this.isDone = false});
   Widget buildTodo(BuildContext context) {
     return isDone
@@ -73,6 +78,16 @@ class _MyHomePageState extends State<MyHomePage> {
     controller.clear();
   }
 
+  void _toggleDoneTodo(int index) {
+    setState(() {
+      _todos = [
+        ..._todos.sublist(0, index),
+        Todo(_todos[index].title, isDone: !_todos[index].isDone),
+        ..._todos.sublist(index + 1),
+      ];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +104,18 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: _todos.length,
               itemBuilder: (context, index) {
                 final item = _todos[index];
-                return item.buildTodo(context);
+                return Row(
+                  children: [
+                    Expanded(child: item.buildTodo(context)),
+                    ElevatedButton(
+                      onPressed: () {
+                        _toggleDoneTodo(index);
+                      },
+                      child: Icon(Icons.check),
+                    ),
+                  ],
+                );
+                // return item.buildTodo(context);
               },
             ),
           ],
